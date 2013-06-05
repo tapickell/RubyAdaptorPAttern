@@ -1,6 +1,7 @@
 require "adapter.rb"
 require "twitter"
 
+
 describe TweetIOAdapter do
 	before(:all) do
 		Twitter.configure do |config|
@@ -9,24 +10,16 @@ describe TweetIOAdapter do
 			config.oauth_token = "243477652-XjDMaWdEJFon570spAL9m9hGBDBlcfxUZNjouHK5"
 			config.oauth_token_secret = "prayHHQ0DblsMrzN8DZs9Lt0Oi2QxiGboILJphVVqA"
 		end
+		@timeline = Twitter.user_timeline("myappleguy")
+		@test = "myappleguy => @peacedaisies wait, wha? What would you use that for?"
 	end
 	
 	before(:each) do
-		@timeline = Twitter.user_timeline("myappleguy")
-		@test = "myappleguy => @peacedaisies wait, wha? What would you use that for?"
 		@tweet_adapter = TweetIOAdapter.new(@timeline)
 	end
 	
 	it "should initialize with a twitter user timeline" do
 		@tweet_adapter.tweets.should == @timeline
-	end
-
-	it "should store latest tweet object in variable" do
-		@tweet_adapter.last_tweet.should == @timeline[0]
-	end
-
-	it "should initialize with an empty string" do
-		@tweet_adapter.string.should == ""
 	end
 
 	it "should initialize with position set to 0" do
@@ -41,9 +34,38 @@ describe TweetIOAdapter do
 		@tweet_adapter.should respond_to(:eof?)
 	end
 
-	describe "#tweet_to_string" do
-		it "should return a string with user and full text" do
-			@tweet_adapter.tweet_to_string(@tweet_adapter.last_tweet).should == @test
+	describe "#getc" do
+		before(:each) do
+			@tweet_adapter = TweetIOAdapter.new(@timeline)
+		end
+
+		it "should return the char at the current position" do
+			@tweet_adapter.getc.should == @tweet_adapter.string[@tweet_adapter.position - 1]
+		end
+
+		it "should increment the position by one when called" do
+			expect { @tweet_adapter.getc }.to change { @tweet_adapter.position }.by(1)
+		end
+
+		it "should raise eof error if position is greater or eq to string length" do
+			@tweet_adapter.position = @tweet_adapter.string.length
+			expect { @tweet_adapter.getc }.to raise_error(EOFError)
+		end
+	end
+	
+	describe "#eof?" do
+		before(:each) do
+			@tweet_adapter = TweetIOAdapter.new(@timeline)
+		end
+
+		it "should retrun true if position is not < string.length" do
+			@tweet_adapter.position = @tweet_adapter.string.length
+			@tweet_adapter.eof?.should == true
+		end
+
+		it "should return fasle is position is < sting.length" do
+			@tweet_adapter.eof?.should == false
 		end
 	end
 end
+
